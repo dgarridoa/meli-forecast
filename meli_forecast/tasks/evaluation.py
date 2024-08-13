@@ -9,7 +9,6 @@ from meli_forecast.params import EvaluationParams, Params, read_config
 from meli_forecast.schemas import ForecastSchema, MetricsSchema
 from meli_forecast.utils import (
     read_table,
-    set_mlflow_experiment,
     write_delta_table,
 )
 
@@ -44,7 +43,6 @@ class EvaluationTask:
             freq=self.params.freq,
         )
 
-        set_mlflow_experiment()
         with mlflow.start_run(run_name=self.__class__.__name__):
             mlflow.set_tags(self.params.__dict__)
 
@@ -55,20 +53,21 @@ class EvaluationTask:
             df_metrics = evaluation.get_metrics(
                 df_test, df_forecast_on_test, MetricsSchema
             )
-            df_best_models = evaluation.get_best_models(df_metrics).cache()
+            self.write(spark, df_metrics, MetricsSchema, "metrics")
 
+            df_metrics = self.read(spark, "metrics")
+            df_best_models = evaluation.get_best_models(df_metrics).cache()
             mlflow.log_metric(
                 self.params.model_selection_metric,
                 df_best_models.agg(F.mean("value")).collect()[0][0],
             )
+            self.write(spark, df_best_models, MetricsSchema, "best_models")
 
         df_all_models_forecast = self.read(spark, "all_models_forecast")
+        df_best_models = self.read(spark, "best_models")
         df_forecast = evaluation.get_forecast(
             df_all_models_forecast, df_best_models
         )
-
-        self.write(spark, df_metrics, MetricsSchema, "metrics")
-        self.write(spark, df_best_models, MetricsSchema, "best_models")
         self.write(spark, df_forecast, ForecastSchema, "forecast")
 
 
