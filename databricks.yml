@@ -238,7 +238,7 @@ targets:
           job_clusters:
             - job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
               new_cluster:
-                num_workers: 2
+                num_workers: 1
           email_notifications:
             on_start: ["diego.garrido.6568@gmail.com"]
             on_success: ["diego.garrido.6568@gmail.com"]
