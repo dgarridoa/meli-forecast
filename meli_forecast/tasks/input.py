@@ -70,9 +70,8 @@ class InputTask:
             StringType(),
         )
         df_input = (
-            df_sales.withColumn(
-                "city", find_city_by_zipcode_udf("country", "zipcode")
-            )
+            df_sales.filter(F.col("zipcode").isNotNull())
+            .withColumn("city", find_city_by_zipcode_udf("country", "zipcode"))
             .filter(F.col("city").isNotNull())
             .withColumn("sales", F.col("sales").cast(DoubleType()))
             .groupby("city", "product_id", "date")
