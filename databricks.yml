@@ -22,7 +22,7 @@ resources:
           new_cluster:
             spark_version: "15.3.x-cpu-ml-scala2.12"
             spark_conf:
-              spark.databricks.sql.initial.catalog.name: "meli-forecast"
+              spark.databricks.sql.initial.catalog.name: meli-forecast
             spark_env_vars:
               MLFLOW_EXPERIMENT_NAME: "${resources.experiments.mlflow-meli-forecast.name}"
               WORKSPACE_FILE_PATH: "/Workspace${workspace.root_path}/files"
@@ -234,9 +234,9 @@ targets:
       user_name: diego.garrido.6568@gmail.com
     resources:
       jobs:
-        meli-forecast:
+        forecast:
           job_clusters:
-            - job_cluster_key: "${bundle.target}-${bundle.name}-job-cluster"
+            - job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
               new_cluster:
                 num_workers: 2
           email_notifications:
