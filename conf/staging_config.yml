@@ -15,6 +15,7 @@ ingestion:
     - *common
   dir: "data"
   sep: ","
+  cities: ["M5"]
 split:
   <<:
     - *common
