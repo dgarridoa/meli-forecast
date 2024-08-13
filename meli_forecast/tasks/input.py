@@ -74,6 +74,7 @@ class InputTask:
             .withColumn("city", find_city_by_zipcode_udf("country", "zipcode"))
             .filter(F.col("city").isNotNull())
             .withColumn("sales", F.col("sales").cast(DoubleType()))
+            .fillna(0.0)
             .groupby("city", "product_id", "date")
             .agg(F.sum("sales").alias("sales"))
         )
