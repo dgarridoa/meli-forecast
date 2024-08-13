@@ -78,12 +78,20 @@ class EvaluationParams(CommonParams):
     model_config = ConfigDict(protected_namespaces=())
 
 
+class OutputParams(CommonParams):
+    group_columns: list[str] = ["city", "product_id"]
+    time_column: str = "date"
+    target_column: str = "sales"
+    window_size: int = 7
+
+
 class Params(BaseModel):
     common: CommonParams
     ingestion: IngestionParams
     split: SplitParams
     models: dict[str, ModelParams]
     evaluation: EvaluationParams
+    output: OutputParams
 
 
 def read_config():
