@@ -48,6 +48,8 @@ mlruns/
 *.crc
 !project.json
 *.csv
+!geo.csv
+!product_sales.csv
 *.parquet
 
 # Drawio
