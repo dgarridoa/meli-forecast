@@ -12,7 +12,7 @@ SalesSchema = StructType(
         StructField("country", StringType(), False),
         StructField("product_id", StringType(), False),
         StructField("date", DateType(), False),
-        StructField("zipcode", LongType(), False),
+        StructField("zipcode", LongType(), True),
         StructField("sales", StringType(), True),
     ]
 )
