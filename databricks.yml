@@ -1,0 +1,245 @@
+bundle:
+  name: meli-forecast
+
+artifacts:
+  wheel:
+    type: whl
+    path: ./
+    build: poetry build
+
+workspace:
+  auth_type: pat
+
+resources:
+  experiments:
+    mlflow-meli-forecast:
+      name: ${workspace.root_path}/artifacts/${bundle.target}-${bundle.name}
+  jobs:
+    forecast:
+      name: ${bundle.target}-${bundle.name}
+      job_clusters:
+        - job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          new_cluster:
+            spark_version: "15.3.x-cpu-ml-scala2.12"
+            spark_conf:
+              spark.databricks.sql.initial.catalog.name: "meli-forecast"
+            spark_env_vars:
+              MLFLOW_EXPERIMENT_NAME: "${resources.experiments.mlflow-meli-forecast.name}"
+              WORKSPACE_FILE_PATH: "/Workspace${workspace.root_path}/files"
+            driver_node_type_id: Standard_DS3_v2
+            node_type_id: Standard_DS5_v2
+            num_workers: 1
+      tasks:
+        - task_key: create_database
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: create_database
+            parameters:
+              - "--conf-file"
+              - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: create_tables
+          depends_on:
+            - task_key: create_database
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+             package_name: meli_forecast
+             entry_point: create_tables
+             parameters:
+             - "--conf-file"
+             - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: ingestion
+          depends_on:
+            - task_key: create_tables
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+             package_name: meli_forecast
+             entry_point: ingestion
+             parameters:
+             - "--conf-file"
+             - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: input
+          depends_on:
+            - task_key: ingestion
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+             package_name: meli_forecast
+             entry_point: input
+             parameters:
+             - "--conf-file"
+             - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: split
+          depends_on:
+            - task_key: input
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+             package_name: meli_forecast
+             entry_point: split
+             parameters:
+             - "--conf-file"
+             - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: exponential_smoothing
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "ExponentialSmoothing"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: prophet
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "Prophet"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: xgboost
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "XGBModel"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: random_forest
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "RandomForest"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: croston
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "Croston"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: mean
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "NaiveMean"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: moving_average
+          depends_on:
+            - task_key: split
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: model
+            parameters:
+            - "--model-name"
+            - "NaiveMovingAverage"
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: evaluation
+          depends_on:
+            - task_key: exponential_smoothing
+            - task_key: prophet
+            - task_key: xgboost
+            - task_key: random_forest
+            - task_key: croston
+            - task_key: mean
+            - task_key: moving_average
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+            package_name: meli_forecast
+            entry_point: evaluation
+            parameters:
+            - "--conf-file"
+            - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+        - task_key: output
+          depends_on:
+            - task_key: evaluation
+          job_cluster_key: ${bundle.target}-${bundle.name}-job-cluster
+          python_wheel_task:
+             package_name: meli_forecast
+             entry_point: output
+             parameters:
+             - "--conf-file"
+             - "/Workspace${workspace.root_path}/files/conf/${bundle.target}_config.yml"
+          libraries:
+            - whl: ./dist/*.whl
+targets:
+  dev:
+    mode: development
+    default: true
+  staging:
+    mode: production
+    workspace:
+      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      user_name: diego.garrido.6568@gmail.com
+  prod:
+    mode: production
+    workspace:
+      root_path: /Shared/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      user_name: diego.garrido.6568@gmail.com
+    resources:
+      jobs:
+        meli-forecast:
+          job_clusters:
+            - job_cluster_key: "${bundle.target}-${bundle.name}-job-cluster"
+              new_cluster:
+                num_workers: 2
+          email_notifications:
+            on_start: ["diego.garrido.6568@gmail.com"]
+            on_success: ["diego.garrido.6568@gmail.com"]
+            on_failure: ["diego.garrido.6568@gmail.com"]
