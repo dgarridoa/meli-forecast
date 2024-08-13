@@ -24,6 +24,11 @@ class CommonParams(BaseModel):
             self.execution_date = datetime.now(tz=ZoneInfo(self.tz)).date()
 
 
+class IngestionParams(CommonParams):
+    dir: str
+    sep: str = ","
+
+
 class SplitParams(CommonParams):
     group_columns: list[str] = ["city", "product_id"]
     time_column: str = "date"
@@ -74,7 +79,8 @@ class EvaluationParams(CommonParams):
 
 
 class Params(BaseModel):
-    create_database: CommonParams
+    common: CommonParams
+    ingestion: IngestionParams
     split: SplitParams
     models: dict[str, ModelParams]
     evaluation: EvaluationParams

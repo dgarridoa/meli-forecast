@@ -25,7 +25,7 @@ def entrypoint():
     config = read_config()
     params = Params(**config)
     spark = SparkSession.builder.getOrCreate()  # type: ignore
-    task = CreateDataBaseTask(params.create_database)
+    task = CreateDataBaseTask(params.common)
     task.launch(spark)
 
 
