@@ -19,11 +19,14 @@ from meli_forecast.utils import extract_timeseries_from_pandas_dataframe
 
 @runtime_checkable
 class ModelProtocol(Protocol):
-    def __init__(self): ...
+    def __init__(self):
+        ...
 
-    def fit(self, series: TimeSeries) -> Optional["ModelProtocol"]: ...
+    def fit(self, series: TimeSeries) -> Optional["ModelProtocol"]:
+        ...
 
-    def predict(self, n: int) -> TimeSeries | Sequence[TimeSeries]: ...
+    def predict(self, n: int) -> TimeSeries | Sequence[TimeSeries]:
+        ...
 
 
 T = TypeVar("T", bound=ModelProtocol)
@@ -137,17 +140,23 @@ class DistributedModel:
     def fit_predict(
         self, df_train: DataFrame, forecast_schema: StructType, steps: int
     ) -> DataFrame:
+        def pandas_udf(pdf: pd.DataFrame) -> pd.DataFrame:
+            try:
+                return Model.fit_predict(
+                    df_train=pdf,
+                    steps=steps,
+                    group_columns=self.group_columns,
+                    time_column=self.time_column,
+                    target_column=self.target_column,
+                    model_cls=self.model_cls,
+                    model_params=self.model_params,
+                    freq=self.freq,
+                )
+            except Exception:
+                return pd.DataFrame(columns=forecast_schema.names)
+
         df_predict = df_train.groupBy(self.group_columns).applyInPandas(
-            lambda pdf: Model.fit_predict(
-                df_train=pdf,
-                steps=steps,
-                group_columns=self.group_columns,
-                time_column=self.time_column,
-                target_column=self.target_column,
-                model_cls=self.model_cls,
-                model_params=self.model_params,
-                freq=self.freq,
-            ),
+            pandas_udf,
             schema=forecast_schema,
         )
         return df_predict
