@@ -73,7 +73,7 @@ class DBUtilsFixture:
         deletion_func(path)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def spark() -> Generator[SparkSession, None, None]:
     """
     This fixture provides preconfigured SparkSession with Hive and Delta support.
