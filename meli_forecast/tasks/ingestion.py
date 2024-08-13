@@ -1,6 +1,7 @@
 import os
 
 import mlflow
+import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import StructType
@@ -30,9 +31,11 @@ class IngestionTask:
             path = "file:{base_path}/{relative_path}".format(
                 base_path=base_path, relative_path=path
             )
-        df = spark.read.csv(
-            path, sep=self.params.sep, header=True, schema=schema
-        )
+        df = spark.read.csv(path, sep=self.params.sep, header=True)
+        for field in schema.fields:
+            df = df.withColumn(
+                field.name, F.col(field.name).cast(field.dataType)
+            )
         return df
 
     def launch(self, spark: SparkSession):
