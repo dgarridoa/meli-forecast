@@ -45,6 +45,10 @@ class IngestionTask:
 
         df_sales = self.read(spark, "product_sales.csv", SalesSchema)
         df_geo = self.read(spark, "geo.csv", GeoSchema)
+
+        if self.params.cities:
+            df_geo = df_geo.filter(F.col("city").isin(self.params.cities))
+
         write_delta_table(
             spark,
             df_sales,

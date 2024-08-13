@@ -27,6 +27,7 @@ class CommonParams(BaseModel):
 class IngestionParams(CommonParams):
     dir: str
     sep: str = ","
+    cities: list[str] | None = None
 
 
 class SplitParams(CommonParams):
