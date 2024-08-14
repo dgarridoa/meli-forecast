@@ -71,6 +71,8 @@ The importance of having a robust metric or evaluation methodology that consider
 
 ![](docs/dashboard.png)
 
+To replicate the results locally, run the `notebooks/forecast_workflow.ipynb` file.
+
 # Settings
 
 This project performs distributed forecasting on Spark using [darts](https://github.com/unit8co/darts). The project uses Databricks Asset Bundles (dap) to deploy a demand forecasting pipeline as Databricks Workflow.
