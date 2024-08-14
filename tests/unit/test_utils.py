@@ -47,7 +47,9 @@ def test_write_delta_table(spark: SparkSession, df: DataFrame):
     assert_pyspark_df_equal(df, delta_table_df)
 
     table = "internal_table_with_partitions"
-    write_delta_table(spark, df, schema, database, table, "overwrite", ["country"])
+    write_delta_table(
+        spark, df, schema, database, table, "overwrite", ["country"]
+    )
     assert get_table_info(spark, database, table)["Type"] == "MANAGED"
     delta_table_df = read_table(spark, database, table)
     assert_pyspark_df_equal(df, delta_table_df)
