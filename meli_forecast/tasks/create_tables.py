@@ -19,7 +19,7 @@ from meli_forecast.utils import (
 )
 
 
-class CreateForecastTablesTask:
+class CreateTablesTask:
     def __init__(self, params: CommonParams) -> None:
         self.params = params
 
@@ -92,7 +92,7 @@ def entrypoint():
     config = read_config()
     params = Params(**config)
     spark = SparkSession.builder.getOrCreate()  # type: ignore
-    task = CreateForecastTablesTask(params.common)
+    task = CreateTablesTask(params.common)
     task.launch(spark)
 
 
