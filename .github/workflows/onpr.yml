@@ -1,0 +1,83 @@
+name: CI pipeline
+
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+    branches:
+      - 'main'
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'notebooks/**'
+
+jobs:
+  ci-pipeline:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: 'Authenticate to Azure'
+        uses: 'azure/login@v1'
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID}}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID}}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID}}
+
+      - id: 'secrets'
+        uses: 'azure/CLI@v1'
+        with:
+          azcliversion: latest
+          inlineScript: |
+            DATABRICKS_HOST=$(az keyvault secret show --name "DATABRICKS-HOST" --vault-name ${{ secrets.AZURE_KEYVAULT_NAME }} --query "value" -o tsv)
+            DATABRICKS_TOKEN=$(az keyvault secret show --name "DATABRICKS-TOKEN" --vault-name ${{ secrets.AZURE_KEYVAULT_NAME }} --query "value" -o tsv)
+            echo "DATABRICKS_HOST=$DATABRICKS_HOST" >> $GITHUB_OUTPUT
+            echo "DATABRICKS_TOKEN=$DATABRICKS_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
+
+      - name: Install dependencies and project in dev mode
+        run: |
+          poetry install --with dev,test
+
+      - name:  Run pre-commit check
+        run: |
+          poetry run pre-commit run --all-files
+
+      - name: Run unit tests
+        run: |
+          echo "Launching unit tests"
+          poetry run pytest tests/unit
+
+      - name: Intall databricks cli
+        uses: databricks/setup-cli@main
+
+      - name: Deploy the workflow
+        run: |
+          databricks bundle deploy -t staging
+        env:
+          DATABRICKS_HOST: '${{ steps.secrets.outputs.DATABRICKS_HOST }}'
+          DATABRICKS_TOKEN: '${{ steps.secrets.outputs.DATABRICKS_TOKEN }}'
+
+      - name: Run the workflow
+        run: |
+          databricks bundle run -t staging forecast
+        env:
+          DATABRICKS_HOST: '${{ steps.secrets.outputs.DATABRICKS_HOST }}'
+          DATABRICKS_TOKEN: '${{ steps.secrets.outputs.DATABRICKS_TOKEN }}'
