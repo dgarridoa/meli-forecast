@@ -5,10 +5,11 @@ on:
     types: [ opened, synchronize ]
     branches:
       - 'main'
-    paths-ignore:
-      - 'README.md'
-      - 'docs/**'
-      - 'notebooks/**'
+    paths:
+      - '**.py'
+      - 'pyproject.toml'
+      - 'databricks.yml'
+      - 'conf'
 
 jobs:
   ci-pipeline:
