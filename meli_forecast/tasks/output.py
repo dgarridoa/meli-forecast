@@ -73,7 +73,7 @@ class OutputTask:
             df_aggregated_dummy_forecast.select(
                 *df_aggregated_forecast.columns
             )
-        )
+        ).withColumn("sales", F.greatest("sales", F.lit(0.0)))
         return df_output
 
     def launch(self, spark: SparkSession):
